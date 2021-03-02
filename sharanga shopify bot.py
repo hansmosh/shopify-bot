@@ -121,10 +121,13 @@ def find_size(session, product, size):
         # Use 'in' instead of '==' in case the site lists sizes as 11 US
         if(size in variant["title"]):
             print("Found matching size")
-            variant = str(variant["id"])
+
+            if not variant.get("available"):
+                print("Size not available")
+                continue
 
             # Return the variant for the size
-            return variant
+            return str(variant["id"])
 
     # If the size isn't found but random size is enabled
     if(random_size):
@@ -132,7 +135,7 @@ def find_size(session, product, size):
         variants = []
 
         # Add all the variants to the list
-        for variant in product["variants"]:
+        for variant in (v for v in product["variants"] if v.get("available")):
             variants.append(variant["id"])
 
         # Randomly select a variant
