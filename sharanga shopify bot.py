@@ -324,15 +324,9 @@ print(f"Payment link: {link}")
 r = session.get(link, cookies=cj, verify=False)
 
 bs = soup(r.text, "html.parser")
-div = bs.find("div", {"class": "radio__input"})
-print(div)
-
-gateway = ""
-values = str(div.input).split('"')
-for value in values:
-    if value.isnumeric():
-        gateway = value
-        break
+input = bs.find("input", {"name": "checkout[payment_gateway]"})
+gateway = str(input["value"])
+print(f"Payment gateway: {gateway}")
 
 # Submit the payment
 link = checkout_link
