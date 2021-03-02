@@ -38,6 +38,7 @@ base_url = "https://www.deadstock.ca"  # Don't add a / at the end
 # Search settings
 keywords = ["adidas", "cs2"]  # Seperate keywords with a comma
 size = "11"
+quantity = 1
 
 # If a size is sold out, a random size will be chosen instead, as a backup plan
 random_size = True
@@ -223,7 +224,7 @@ def add_to_cart(session, variant):
     print("Adding to cart")
 
     # Add the product to cart
-    link = base_url + "/cart/add.js?quantity=1&id=" + variant
+    link = base_url + f"/cart/add.js?quantity={quantity}&id=" + variant
     response = session.get(link, verify=False)
 
     print("Added to cart")
