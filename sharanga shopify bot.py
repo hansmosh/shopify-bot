@@ -71,6 +71,8 @@ def get_products(session):
     '''
     Gets all the products from a Shopify site.
     '''
+    print(f"Getting products for {base_url}")
+
     # Download the products
     link = base_url + "/products.json"
     r = session.get(link, verify=False)
@@ -80,6 +82,7 @@ def get_products(session):
     products = products_json["products"]
 
     # Return the products
+    print(f"Got x number of products {len(products)}")
     return products
 
 
@@ -88,6 +91,7 @@ def keyword_search(session, products, keywords):
     Searches through given products from a Shopify site to find the a product
     containing all the defined keywords.
     '''
+    print(f"Search for keywords in products: {keywords}")
     # Go through each product
     for product in products:
         # Set a counter to check if all the keywords are found
@@ -100,19 +104,23 @@ def keyword_search(session, products, keywords):
                 keys += 1
             # If all the keywords were found
             if(keys == len(keywords)):
+                print("Found a product that matches all keywords")
                 # Return the product
                 return product
+    print("No products match all keywords")
 
 
 def find_size(session, product, size):
     '''
     Find the specified size of a product from a Shopify site.
     '''
+    print(f"Checking for size in product: {size}")
     # Go through each variant for the product
     for variant in product["variants"]:
         # Check if the size is found
         # Use 'in' instead of '==' in case the site lists sizes as 11 US
         if(size in variant["title"]):
+            print("Found matching size")
             variant = str(variant["id"])
 
             # Return the variant for the size
@@ -131,6 +139,7 @@ def find_size(session, product, size):
         variant = str(random.choice(variants))
 
         # Return the result
+        print("Size not found, using random variant")
         return variant
 
 
@@ -138,10 +147,12 @@ def generate_cart_link(session, variant):
     '''
     Generate the add to cart link for a Shopify site given a variant ID.
     '''
+    print("Generating cart link")
     # Create the link to add the product to cart
     link = base_url + "/cart/" + variant + ":1"
 
     # Return the link
+    print(f"Cart link: {link}")
     return link
 
 
@@ -150,6 +161,7 @@ def get_payment_token(card_number, cardholder, expiry_month, expiry_year, cvv):
     Given credit card details, the payment token for a Shopify checkout is
     returned.
     '''
+    print("Generating payment token")
     # POST information to get the payment token
     link = "https://elb.deposit.shopifycs.com/sessions"
 
@@ -168,6 +180,7 @@ def get_payment_token(card_number, cardholder, expiry_month, expiry_year, cvv):
     # Extract the payment token
     payment_token = json.loads(r.text)["id"]
 
+    print(f"Got a payment token: {payment_token}")
     # Return the payment token
     return payment_token
 
@@ -176,8 +189,11 @@ def get_shipping(postal_code, country, province, cookie_jar):
     '''
     Given address details and the cookies of a Shopify checkout session, a shipping option is returned
     '''
+    print("Get shipping")
+
     # Get the shipping rate info from the Shopify site
     link = base_url + "//cart/shipping_rates.json?shipping_address[zip]=" + postal_code + "&shipping_address[country]=" + country + "&shipping_address[province]=" + province
+    print(f"Shipping link: {link}")
     r = session.get(link, cookies=cookie_jar, verify=False)
 
     # Load the shipping options
@@ -190,6 +206,8 @@ def get_shipping(postal_code, country, province, cookie_jar):
     # Generate the shipping token to submit with checkout
     shipping_option = "shopify-" + ship_opt + "-" + ship_prc
 
+    print(f"Shipping option: {shipping_option}")
+
     # Return the shipping option
     return shipping_option
 
@@ -199,10 +217,13 @@ def add_to_cart(session, variant):
     Given a session and variant ID, the product is added to cart and the
     response is returned.
     '''
+    print("Adding to cart")
+
     # Add the product to cart
     link = base_url + "/cart/add.js?quantity=1&id=" + variant
     response = session.get(link, verify=False)
 
+    print("Added to cart")
     # Return the response
     return response
 
@@ -212,6 +233,8 @@ def submit_customer_info(session, cookie_jar):
     Given a session and cookies for a Shopify checkout, the customer's info
     is submitted.
     '''
+    print("Go to checkout")
+
     # Submit the customer info
     payload = {
         "utf8": u"\u2713",
@@ -244,7 +267,9 @@ def submit_customer_info(session, cookie_jar):
     # Get the checkout URL
     link = response.url
     checkout_link = link
+    print(f"Checkout link: {checkout_link}")
 
+    print("Post the checkout")
     # POST the data to the checkout URL
     response = session.post(link, cookies=cookie_jar, data=payload, verify=False)
 
@@ -289,7 +314,9 @@ p = get_payment_token(card_number, cardholder, exp_m, exp_y, cvv)
 ship = get_shipping(postal_code, country, province, cj)
 
 # Get the payment gateway ID
+print("Get payment gateway id")
 link = checkout_link + "?step=payment_method"
+print(f"Payment link: {link}")
 r = session.get(link, cookies=cj, verify=False)
 
 bs = soup(r.text, "html.parser")
@@ -305,6 +332,7 @@ for value in values:
 
 # Submit the payment
 link = checkout_link
+print(f"Submit the payment to {link}")
 payload = {
     "utf8": u"\u2713",
     "_method": "patch",
@@ -332,5 +360,7 @@ payload = {
     "g-recaptcha-repsonse": "",
     "button": ""
     }
+print(payload)
 
 r = session.post(link, cookies=cj, data=payload, verify=False)
+print(r)
